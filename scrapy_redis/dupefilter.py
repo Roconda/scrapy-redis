@@ -7,6 +7,7 @@ from scrapy.utils.request import request_fingerprint
 
 class RFPDupeFilter(BaseDupeFilter):
     """Redis-based request duplication filter"""
+    ttl = -1
 
     def __init__(self, server, key):
         """Initialize duplication filter
@@ -16,6 +17,7 @@ class RFPDupeFilter(BaseDupeFilter):
         server : Redis instance
         key : str
             Where to store fingerprints
+        ttl: Dupe expire time in seconds
         """
         self.server = server
         self.key = key
@@ -27,6 +29,11 @@ class RFPDupeFilter(BaseDupeFilter):
         # class as standalone dupefilter with scrapy's default scheduler
         # if scrapy passes spider on open() method this wouldn't be needed
         key = "dupefilter:%s" % int(time.time())
+
+        # Check if TTL settings is available.
+        if hasattr(settings, "DUPE_TTL"):
+            cls.ttl = settings.DUPE_TTL
+
         return cls(server, key)
 
     @classmethod
@@ -36,6 +43,10 @@ class RFPDupeFilter(BaseDupeFilter):
     def request_seen(self, request):
         fp = request_fingerprint(request)
         added = self.server.sadd(self.key, fp)
+
+        if self.ttl > 0:
+            self.server.expire(self.key, self.ttl)
+
         return not added
 
     def close(self, reason):
