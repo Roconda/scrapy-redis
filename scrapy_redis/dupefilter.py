@@ -44,8 +44,9 @@ class RFPDupeFilter(BaseDupeFilter):
         fp = request_fingerprint(request)
         added = self.server.sadd(self.key, fp)
 
-        if self.ttl > 0:
-            self.server.expire(self.key, self.ttl)
+        #if self.ttl > 0:
+        ttl_computed = 6*3600
+        self.server.expire(self.key,ttl_computed)
 
         return not added
 
