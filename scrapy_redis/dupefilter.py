@@ -42,11 +42,11 @@ class RFPDupeFilter(BaseDupeFilter):
 
     def request_seen(self, request):
         fp = request_fingerprint(request)
-        added = self.server.sadd(self.key, fp)
+        added = self.server.sadd(fp, 1)
 
         #if self.ttl > 0:
-        ttl_computed = 6*3600
-        self.server.expire(self.key,ttl_computed)
+        ttl_computed = 6*3600 # TODO: make this configurable per spider
+        self.server.expire(fp, ttl_computed)
 
         return not added
 
